@@ -1,0 +1,50 @@
+name: PHP With Supercronic
+
+on:
+  push:
+    branches:
+      - $default-branch
+    tags:
+      - v*
+  pull_request:
+
+env:
+  IMAGE_NAME: php-with-supercronic
+
+jobs:
+  test_7_3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run tests
+        run: docker build . --file php-with-supercronic/Dockerfile_7.3
+  push_7_3:
+    needs: test_7_3
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
+    env:
+      VERSION: 7.3
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build image
+        run: docker build php-with-supercronic --file php-with-supercronic/Dockerfile_7.3 --tag $IMAGE_NAME
+      - name: Log into registry
+        run: |
+          DOCKER_LOGIN=$(echo "${{ github.actor }}" | tr '[A-Z]' '[a-z]')
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u $DOCKER_LOGIN --password-stdin
+      - name: Push image
+        run: |
+          IMAGE_ID=${{ github.repository_owner }}/$IMAGE_NAME
+          # Transform to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          # Strip git ref prefix from version
+          BRANCH=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # Use Docker `latest` tag convention
+          [ "$BRANCH" == "$default-branch" ] && VERSION=latest
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION

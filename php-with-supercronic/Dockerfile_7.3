@@ -1,0 +1,36 @@
+FROM php:7.3-fpm-alpine
+
+LABEL MAINTAINER = 'Neur0toxine (pashok9825@gmail.com)'
+
+RUN apk --update add \
+    autoconf \
+    shadow \
+    gcc \
+    libc-dev \
+    make \
+    wget \
+    postgresql-dev \
+    libxml2-dev \
+    libzip-dev \
+    libpng-dev \
+    libxslt-dev \
+    && pecl channel-update pecl.php.net \
+    && pecl install redis-5.3.1 \
+    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
+    && docker-php-ext-configure pgsql -with-pgsql=/usr/include/postgresql/ \
+    && docker-php-ext-configure zip --with-libzip=/usr/include \
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install -j$(nproc) pgsql pdo_pgsql intl pcntl soap imap \
+    && docker-php-ext-enable opcache redis \
+    && rm -rf /var/cache/apk/* && rm -rf /etc/apk/cache \
+    && curl -L https://getcomposer.org/composer-stable.phar -o /usr/bin/composer && chmod a+x /usr/bin/composer
+
+ENV SUPERCRONIC_URL=https://github.com/aptible/supercronic/releases/download/v0.1.12/supercronic-linux-amd64 \
+    SUPERCRONIC=supercronic-linux-amd64 \
+    SUPERCRONIC_SHA1SUM=048b95b48b708983effb2e5c935a1ef8483d9e3e
+
+RUN curl -fsSLO "$SUPERCRONIC_URL" \
+     && echo "${SUPERCRONIC_SHA1SUM}  ${SUPERCRONIC}" | sha1sum -c - \
+     && chmod +x "$SUPERCRONIC" \
+     && mv "$SUPERCRONIC" "/usr/local/bin/${SUPERCRONIC}" \
+     && ln -s "/usr/local/bin/${SUPERCRONIC}" /usr/local/bin/supercronic
