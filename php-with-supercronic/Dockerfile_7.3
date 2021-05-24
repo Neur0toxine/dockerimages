@@ -17,7 +17,7 @@ RUN apk --update add \
     krb5-dev \
     git \
     && pecl channel-update pecl.php.net \
-    && pecl install redis-5.3.1 \
+    && pecl install redis-5.3.1 pcov-1.0.8 \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-configure pgsql -with-pgsql=/usr/include/postgresql/ \
     && docker-php-ext-configure zip --with-libzip=/usr/include \
