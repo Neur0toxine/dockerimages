@@ -14,12 +14,12 @@ env:
 jobs:
   test_7_3:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v2
       - name: Run tests
         run: docker build . --file php-with-supercronic/Dockerfile_7.3
   push_7_3:
-    needs: test_7_3
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     permissions:
